@@ -1,4 +1,4 @@
-MAX_TRIES = 100
+require 'csv'
 
 class Point
 
@@ -7,9 +7,9 @@ class Point
     @y_coord = y
   end
 
-  def add(point)
-    @x_coord += point-@x_coord
-    @y_coord += point-@y_coord
+  def add(x, y)
+    @x_coord += x
+    @y_coord += y
     self
   end
 
@@ -27,86 +27,104 @@ end
 
 class Centroid < Point
 
-  @@coord_array = Array.new(2) { Array.new(150) }
-
   def initialize(min_x, max_x, min_y, max_y)
-    @centroid_array = Array.new(3) { Array.new(2) }
-    for i in 0..2
-      @centroid_array[i,0] = Random.new.rand(min_x..max_x)
-      @centroid_array[i,0] = Random.new.rand(min_y..max_y)
-    end
+    @x_coord = Random.new.rand(min_x..max_x)
+    @y_coord = Random.new.rand(min_y..max_y)
   end
 
-  def bounds
-    @max_x = 0
-    @min_y = 0
-    @min_x = @@coord_array[0, 0]
-    @min_y = @@coord_array[0, 1]
-    for i in 0..148
-      if @@coord_array[i, 0] > @max_x then @max_x = @@coord_array[i, 0] end
-      if @@coord_array[i, 1] > @max_y then @max_y = @@coord_array[i, 1] end
-      if @@coord_array[i, 0] < @min_x then @min_x = @@coord_array[i, 0] end
-      if @@coord_array[i, 1] < @min_y then @min_y = @@coord_array[i, 1] end
-    end
-  end
-
-  def check_convergence
-    @equal = true
-    for i in 0...149
-      if
-    end
+  def redefine_bounds(x_sum, y_sum, total)
+    @x_coord = x_sum / total
+    @y_coord = y_sum / total
   end
 
 end
 
 class KMeans
 
-  def initialize(data_array = [], cluster_array = [])
-    @data_array = data_array
-    @cluster_array = cluster_array
+  def initialize
+    @point_array = Array.new(150)
   end
 
-  def calculate(constant)
-    for i in 0..constant
-      @random = Point.new(Random.new.rand, Random.new.rand)
-      @cluster_array.append(i)
+  def bounds(k_const)
+    max_x = 0
+    max_y = 0
+    min_x = 0
+    min_y = 0
+
+    for i in @point_array
+      if @point_array[i]-@x_coord > max_x then max_x = @point_array[i]-@x_coord end
+      if @point_array[i]-@y_coord > max_y then max_y = @point_array[i]-@y_coord end
+      if @point_array[i]-@x_coord < min_x then min_x = @point_array[i]-@x_coord end
+      if @point_array[i]-@y_coord < min_y then min_y = @point_array[i]-@y_coord end
     end
 
-    @lesser_distance_array = []
+    @centroids_array = []
 
-    for i in 0..@data_array.length
+    for i in 0..k_const
+      @centroids_array.append(Centroid.new(min_x, max_x, min_y, max_y))
+    end
+  end
 
-      @point_array = []
-
-      for j in 0..@cluster_array.length
-        @euclidean = "xd"
+  def check_convergence(previous, new)
+    @result = true
+    for i in 0..149
+      if previous[i] != new[i]
+        @result = false
+        break
       end
-
     end
-
-  end
-
-  def insert(data)
-    @data_array.append(data)
-  end
-
-  def stop(old, new, count)
-    if count > MAX_TRIES
-      true
-    end
-    old == new
+    puts "Terminado!"
+    @result
   end
 
 end
 
 class Main
 
-  def initialize()
-    file_obj = File.new("C:\\Users\\Nicolas\\Desktop\clean.csv", "r")
-    while (line = file_obj.gets)
-      puts(line)
+  def initialize
+    @iteration_count = 0
+    @k_means = KMeans.new
+    i_index = 0
+    CSV.table("C:\\Users\\Nicolas\\Desktop\\clean.csv").each do |row|
+      #Fails here
+      @k_means-@point_array[i_index] = Point.new(row[0], row[1])
+      i_index += 1
     end
-    file_obj.close
+
+    @k_means.bounds(3)
+
+    point_class = Array.new(150)
+    prev_class = Array.new(150)
+    counts = Array.new(3)
+    sum_matrix = Matrix.new(3, 2)
+
+    begin
+      prev_class = point_class
+      for i in @k_means-@point_array
+        min_dist = 100000
+        for j in @k_means-@centroids_array.length - 1
+          if min_dist > @k_means-@centroids_array[j].distance(Point.new(@k_means-@point_array[i]-@x_coord, @k_means-@point_array[i]-@y_coord))
+            min_dist = @k_means-@centroids_array[j].distance(Point.new(@k_means-@point_array[i]-@x_coord, @k_means-@point_array[i]-@y_coord))
+            point_class[i] = j
+          end
+        end
+      end
+
+      for i in @k_means-@point_array.length - 2
+        @k_means-sum_matrix[i][0] = @k_means-sum_matrix[i][0] + @k_means-@point_array[i]-@x_coord
+        @k_means-sum_matrix[i][1] = @k_means-sum_matrix[i][1] + @k_means-@point_array[i]-@y_coord
+        counts[point_class[i]] += 1
+      end
+
+      for i in @k_means-@centroids_array.length - 1
+        @k_means-@centroids_array[i][0].redefine_bounds(@k_means-sum_matrix[i][0], @k_means-sum_matrix[i][1], counts[i])
+      end
+      @iteration_count += 1
+    end until @k_means.check_convergence(prev_class, point_class)
+
+    puts "Ejecutado en #{@iteration_count} iteraciones"
   end
 
 end
+
+Main.new
