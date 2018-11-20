@@ -1,10 +1,19 @@
 require 'csv'
+require 'matrix'
 
 class Point
 
   def initialize(x,y)
     @x_coord = x
     @y_coord = y
+  end
+
+  def get_x
+    @x_coord
+  end
+
+  def get_y
+    @y_coord
   end
 
   def add(x, y)
@@ -20,7 +29,7 @@ class Point
   end
 
   def distance(point)
-    Math.sqrt(((@x_coord - point-@x_coord)**2) + ((@y_coord - point-@y_coord)**2))
+    Math.sqrt(((@x_coord - point.get_x)**2) + ((@y_coord - point.get_y)**2))
   end
 
 end
@@ -42,7 +51,16 @@ end
 class KMeans
 
   def initialize
-    @point_array = Array.new(150)
+    @point_array = []
+    @centroids_array = []
+  end
+
+  def get_point_array
+    @point_array
+  end
+
+  def get_centroids_array
+    @centroids_array
   end
 
   def bounds(k_const)
@@ -52,15 +70,13 @@ class KMeans
     min_y = 0
 
     for i in @point_array
-      if @point_array[i]-@x_coord > max_x then max_x = @point_array[i]-@x_coord end
-      if @point_array[i]-@y_coord > max_y then max_y = @point_array[i]-@y_coord end
-      if @point_array[i]-@x_coord < min_x then min_x = @point_array[i]-@x_coord end
-      if @point_array[i]-@y_coord < min_y then min_y = @point_array[i]-@y_coord end
+      if i.get_x > max_x then max_x = i.get_x end
+      if i.get_y > max_y then max_y = i.get_y end
+      if i.get_x < min_x then min_x = i.get_x end
+      if i.get_y < min_y then min_y = i.get_y end
     end
 
-    @centroids_array = []
-
-    for i in 0..k_const
+    for i in 0...k_const
       @centroids_array.append(Centroid.new(min_x, max_x, min_y, max_y))
     end
   end
@@ -84,40 +100,39 @@ class Main
   def initialize
     @iteration_count = 0
     @k_means = KMeans.new
-    i_index = 0
     CSV.table("C:\\Users\\Nicolas\\Desktop\\clean.csv").each do |row|
-      #Fails here
-      @k_means-@point_array[i_index] = Point.new(row[0], row[1])
-      i_index += 1
+      x = row[0]
+      y = row[1]
+      @k_means.get_point_array.append(Point.new(x, y))
     end
 
     @k_means.bounds(3)
 
     point_class = Array.new(150)
     prev_class = Array.new(150)
-    counts = Array.new(3)
-    sum_matrix = Matrix.new(3, 2)
+    counts = [0, 0, 0]
+    sum_matrix = [[0,0], [0,0], [0,0]]
 
     begin
       prev_class = point_class
-      for i in @k_means-@point_array
+      for i in 0...@k_means.get_point_array.length
         min_dist = 100000
-        for j in @k_means-@centroids_array.length - 1
-          if min_dist > @k_means-@centroids_array[j].distance(Point.new(@k_means-@point_array[i]-@x_coord, @k_means-@point_array[i]-@y_coord))
-            min_dist = @k_means-@centroids_array[j].distance(Point.new(@k_means-@point_array[i]-@x_coord, @k_means-@point_array[i]-@y_coord))
+        for j in 0...@k_means.get_centroids_array.length
+          if min_dist > @k_means.get_centroids_array[j].distance(Point.new(@k_means.get_point_array[i].get_x, @k_means.get_point_array[i].get_y))
+            min_dist = @k_means.get_centroids_array[j].distance(Point.new(@k_means.get_point_array[i].get_x, @k_means.get_point_array[i].get_y))
             point_class[i] = j
           end
         end
       end
 
-      for i in @k_means-@point_array.length - 2
-        @k_means-sum_matrix[i][0] = @k_means-sum_matrix[i][0] + @k_means-@point_array[i]-@x_coord
-        @k_means-sum_matrix[i][1] = @k_means-sum_matrix[i][1] + @k_means-@point_array[i]-@y_coord
-        counts[point_class[i]] += 1
+      for i in 0...@k_means.get_point_array.length
+        sum_matrix[point_class[i]][0] = sum_matrix[point_class[i]][0] + @k_means.get_point_array[i].get_x
+        sum_matrix[point_class[i]][1] = sum_matrix[point_class[i]][1] + @k_means.get_point_array[i].get_y
+        counts[point_class[i]] = counts[point_class[i]] + 1
       end
 
-      for i in @k_means-@centroids_array.length - 1
-        @k_means-@centroids_array[i][0].redefine_bounds(@k_means-sum_matrix[i][0], @k_means-sum_matrix[i][1], counts[i])
+      for i in 0...@k_means.get_centroids_array.length
+        @k_means.get_centroids_array[i].redefine_bounds(sum_matrix[i][0], sum_matrix[i][1], counts[i])
       end
       @iteration_count += 1
     end until @k_means.check_convergence(prev_class, point_class)
