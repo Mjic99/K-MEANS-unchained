@@ -16,18 +16,6 @@ class Point
     @y_coord
   end
 
-  def add(x, y)
-    @x_coord += x
-    @y_coord += y
-    self
-  end
-
-  def divide_by(value)
-    @x_coord /= value
-    @y_coord /= value
-    self
-  end
-
   def distance(point)
     Math.sqrt(((@x_coord - point.get_x)**2) + ((@y_coord - point.get_y)**2))
   end
@@ -132,6 +120,7 @@ class Main
       end
 
       for i in 0...@k_means.get_centroids_array.length
+        if counts[i] == 0 then counts[i] = 1 end
         @k_means.get_centroids_array[i].redefine_bounds(sum_matrix[i][0], sum_matrix[i][1], counts[i])
       end
       @iteration_count += 1
