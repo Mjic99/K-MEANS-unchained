@@ -7,6 +7,7 @@ var
   pointClass, prevClass: array [0..149] of integer;
   counts: array [0..2] of integer;
   i, j, iterCount: integer;
+  start: TDateTime;
 
   Userfile: text;
   readchar: char;
@@ -54,7 +55,7 @@ begin
   iterCount := 0;
   DecimalSeparator:='.';
 
-  system.assign(UserFile,'clean.csv');
+  system.assign(UserFile,'SW-PW.csv');
   system.reset(UserFile);
 
   //Lectura de csv en array X
@@ -95,6 +96,8 @@ begin
       Centroids[i,1]:=random(round(maxy-miny))+miny;
   end;
 
+  start := TimeStampToMSecs(DateTimeToTimeStamp(Time));
+
   repeat
     prevClass:=pointClass;
     //Paso 1: Calcular distancias y asignar
@@ -118,6 +121,7 @@ begin
     end;
     for i:=0 to length(Centroids)-1 do
     begin
+        if counts[i]=0 then counts[i]:=1;
         Centroids[i,0]:=sums[i,0]/counts[i];
         Centroids[i,1]:=sums[i,1]/counts[i];
     end;
@@ -125,6 +129,8 @@ begin
     inc(iterCount);
   until checkConvergence();
   writeln('Ejecutado en ',iterCount,' iteraciones');
+  writeln('Tiempo: ',TimeStampToMSecs(DateTimeToTimeStamp(Time))-start);
+  for i in pointClass do writeln(i);
   ReadKey;
 end.
 
