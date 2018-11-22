@@ -53,8 +53,8 @@ class KMeans
   def bounds(k_const)
     max_x = 0
     max_y = 0
-    min_x = 0
-    min_y = 0
+    min_x = @point_array[0].get_x
+    min_y = @point_array[0].get_y
 
     for i in @point_array
       if i.get_x > max_x then max_x = i.get_x end
@@ -69,15 +69,17 @@ class KMeans
   end
 
   def check_convergence(previous, new)
-    @result = true
-    for i in 0..149
+    result = true
+    for i in 0...@point_array.length
       if previous[i] != new[i]
-        @result = false
+        result = false
         break
       end
     end
-    puts "Terminado!"
-    @result
+    if result
+      puts "Terminado!"
+    end
+    result
   end
 
 end
@@ -87,26 +89,24 @@ class Main
   def initialize
     @iteration_count = 0
     @k_means = KMeans.new
-    CSV.table("C:\\Users\\Nicolas\\Desktop\\clean.csv").each do |row|
-      x = row[0]
-      y = row[1]
-      @k_means.get_point_array.append(Point.new(x, y))
+    CSV.table("C:\\Users\\Nicolas\\Desktop\\SL-PL.csv").each do |row|
+      @k_means.get_point_array.append(Point.new(row[0], row[1]))
     end
 
     @k_means.bounds(3)
 
-    point_class = Array.new(150)
-    prev_class = Array.new(150)
+    point_class = []
+    prev_class = []
     counts = [0, 0, 0]
     sum_matrix = [[0,0], [0,0], [0,0]]
 
     begin
-      prev_class = point_class
+      prev_class.replace(point_class)
       for i in 0...@k_means.get_point_array.length
         min_dist = 100000
         for j in 0...@k_means.get_centroids_array.length
-          if min_dist > @k_means.get_centroids_array[j].distance(Point.new(@k_means.get_point_array[i].get_x, @k_means.get_point_array[i].get_y))
-            min_dist = @k_means.get_centroids_array[j].distance(Point.new(@k_means.get_point_array[i].get_x, @k_means.get_point_array[i].get_y))
+          if min_dist > @k_means.get_centroids_array[j].distance(@k_means.get_point_array[i])
+            min_dist = @k_means.get_centroids_array[j].distance(@k_means.get_point_array[i])
             point_class[i] = j
           end
         end
@@ -126,6 +126,12 @@ class Main
     end until @k_means.check_convergence(prev_class, point_class)
 
     puts "Ejecutado en #{@iteration_count} iteraciones"
+
+    puts "Resultado:"
+    for i in point_class
+      puts i
+    end
+
   end
 
 end
