@@ -89,7 +89,7 @@ class Main
   def initialize
     @iteration_count = 0
     @k_means = KMeans.new
-    CSV.table("C:\\Users\\Nicolas\\Desktop\\SL-PL.csv").each do |row|
+    CSV.table("C:\\Users\\Nicolas\\Desktop\\SW-PW.csv").each do |row|
       @k_means.get_point_array.append(Point.new(row[0], row[1]))
     end
 
@@ -100,6 +100,7 @@ class Main
     counts = [0, 0, 0]
     sum_matrix = [[0,0], [0,0], [0,0]]
 
+    start = Time.now
     begin
       prev_class.replace(point_class)
       for i in 0...@k_means.get_point_array.length
@@ -124,8 +125,9 @@ class Main
       end
       @iteration_count += 1
     end until @k_means.check_convergence(prev_class, point_class)
+    finish = Time.now
 
-    puts "Ejecutado en #{@iteration_count} iteraciones"
+    puts "Ejecutado en #{@iteration_count} iteraciones en #{(finish - start) * 1000} ms"
 
     puts "Resultado:"
     for i in point_class
